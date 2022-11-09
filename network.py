@@ -2,7 +2,7 @@
 Overall idea:
 I made this project to practice implementing the A* algorithm. The scenario I am simulating is pretty arbitrary, but I chose it because it seemed interesting to implement.
 The motivation is that a city planner wants to create a network of n settlements, such that the longest travel time in the network doesn't exceed d days.
-This program is a tool that takes in n, d as parameters and spits out CSVs with possible networks that meet the requirements.
+This program is a tool that takes in n, d as parameters and plots a possible network that meets the requirements.
 
 A link between two settlements is characterized by a distance s and a road condition c. Travel between two settlements takes d/100 * c days
 '''

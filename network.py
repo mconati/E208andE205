@@ -2,7 +2,7 @@
 Overall idea:
 I made this project to practice implementing the A* algorithm. The scenario I am simulating is pretty arbitrary, but I chose it because it seemed interesting to implement.
 The motivation is that a city planner wants to create a network of n settlements, such that the longest travel time in the network doesn't exceed d days.
-This program is a tool that takes in n, d as parameters and plots a possible network that meets the requirements.
+This program is a tool that takes in n, d as parameters and spits out CSVs with possible networks that meet the requirements.
 
 A link between two settlements is characterized by a distance s and a road condition c. Travel between two settlements takes d/100 * c days
 '''
@@ -21,7 +21,7 @@ from matplotlib.patches import Patch
 
 #Define road parameters
 road_types = {0: "unclaimed", 1: 'trail', 2: 'gravel', 3: 'paved'}
-road_condition = {'unclaimed': 5, 'trail': 2, 'gravel': 0.5, 'paved': 0.2}
+road_condition = {'unclaimed': 5, 'trail': 2, 'gravel': 1.25, 'paved': 0.8}
 
 #Helper to convert a csv to an array
 def csvToArray(path):
@@ -62,8 +62,11 @@ def graph_length(graph, n):
                 if graph[x][y] > 0 and sptSet[y] == False and \
                         dist[y] > dist[x] + graph[x][y]:
                     dist[y] = dist[x] + graph[x][y]
+        prev_longest = longest
         longest = max(longest, max(dist))
-    return longest
+        if (prev_longest < longest):
+            longest_path = np.array([src, np.argmax(dist)])
+    return longest, longest_path
 
 def get_road_conditions(roads, n):
     road_conditions = np.zeros_like(roads).astype(object)
@@ -76,34 +79,24 @@ def generate_graph(distances, roads, days, n):
     #Find the longest travel time of the current graph using A*
     road_conditions = get_road_conditions(roads, n)
     day_graph = np.multiply(distances/100, road_conditions)
-    cur_days = graph_length(day_graph, n)
-    #If it is too long, add a random road! (This isn't smart, but, oh well. I made this program to practice)
-    type_to_change = 0 #change unpaved roads first
+    cur_days, chosen_road = graph_length(day_graph, n)
+    #If it is too long, add a random road type at the longest road! (This isn't too smart, but, oh well. I made this program to practice)
     while (cur_days>days):
-        possible_roads = (roads==type_to_change).nonzero()
-        while (len(possible_roads[0]) == 0):
-            type_to_change +=1
-            if(type_to_change==4):
-                print("This isn't possible with current road technology!")
-                break
-            possible_roads = (roads==type_to_change).nonzero()
-        chosen_road = random.randint(0, len(possible_roads[0])-1)
-
-        x = possible_roads[0][chosen_road]
-        y = possible_roads[1][chosen_road]
+        x = chosen_road[0]
+        y = chosen_road[1]
         roads = generate_a_random_road(roads, x, y)
         #Check if the longest travel time is shorter now
         road_conditions = get_road_conditions(roads, n)
 
         day_graph = np.multiply(distances/100, road_conditions)
-        cur_days = graph_length(day_graph, n)
+        cur_days, chosen_road = graph_length(day_graph, n)
         print("Current days needed: ", cur_days)
     return roads, cur_days
 
 def generate_a_random_road(roads, x, y):
-    #Start with a random road condition
+    #Upgrade the road!
     
-    type = random.randint(roads[x][y]+1,3)
+    type = roads[x][y]+1
     roads[x][y] = type
     return roads
 
@@ -161,10 +154,10 @@ def generate(args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-days", "--days", dest = "days", default = 7,  help="num maximum travel days")
+    parser.add_argument("-days", "--days", dest = "days", default = 15,  help="num maximum travel days")
     parser.add_argument("-x", "--xrange", dest = "x", default = 1500,  help="x distance of settlement area")
     parser.add_argument("-y", "--yrange", dest = "y", default = 1500,  help="y distance of settlement area")
-    parser.add_argument('-n', '--num_settlements', dest = 'settlements', default = 5, help = 'number of settlements in network')
+    parser.add_argument('-n', '--num_settlements', dest = 'settlements', default = 15, help = 'number of settlements in network')
     parser.add_argument('-p', '--path', dest = 'path', default = "../Test_CSVs/Testing/", help = 'output folder path')
     args = parser.parse_args()
     return args
